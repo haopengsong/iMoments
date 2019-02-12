@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type Location struct {
@@ -18,6 +19,10 @@ type Post struct {
 	Location Location `json:"location"`
 }
 
+const (
+	DISTANCE = "200KM"
+)
+
 func main() {
 	fmt.Println("started-service")
 	http.HandleFunc("/post", handlerPost)
@@ -28,9 +33,40 @@ func main() {
 
 func handlerSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Received one request for search")
-	lat := r.URL.Query().Get("lat")
-	lon := r.URL.Query().Get("lon")
-	fmt.Fprintf(w, "Search received: %s %s", lat, lon)
+	fmt.Println("get paras are: ", r.URL.Query())
+	r.ParseForm()
+	lat, _ := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lon, _ := strconv.ParseFloat(r.URL.Query().Get("lon"), 64)
+	num, _ := strconv.ParseFloat(r.URL.Query().Get("num"), 64)
+	//radius := r.Form.Get("num")
+
+	//range is optional
+	ran := DISTANCE
+
+	fmt.Println(num)
+	if val := r.URL.Query().Get("num"); val != "" {
+		ran = val + "km"
+	}
+	fmt.Println("range is ", ran)
+
+	//return a fake post
+	p := &Post{
+		User:    "1111",
+		Message: "working hard",
+		Location: Location{
+			Lat: lat,
+			Lon: lon,
+		},
+	}
+
+	jsonObj, err := json.Marshal(p)
+	if err != nil {
+		panic(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonObj)
 }
 
 func handlerPost(w http.ResponseWriter, r *http.Request) {
